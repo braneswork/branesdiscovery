@@ -173,6 +173,12 @@ textarea.field-input:focus{outline:none; border-color:var(--violet);}
 const SUPABASE_URL = "https://xwdtamrngffhybvturmk.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3ZHRhbXJuZ2ZmaHlidnR1cm1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1NTA2MzIsImV4cCI6MjEwNDEyNjYzMn0.JG5L6llWqQyi0PfO9EFWXmF0Yobk3EvY_L1hCy6G-w4";
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+/* ---------------------------------------------------------------------- */
+/*  Código de acceso simple — cámbialo aquí por el que quieras usar       */
+/* ---------------------------------------------------------------------- */
+const ACCESS_CODE = "BRANES2026";
+
 </script>
 <script>
 /* ============================= DATA MODEL ============================= */
@@ -316,7 +322,8 @@ function igLink(){
 /* ============================= STATE ============================= */
 
 let state = {
-  screen: "intro",      // intro | question | outro
+  screen: "gate",       // gate | intro | question | outro
+  gateError: false,
   respondentName: "",
   answers: {},           // { qId: value(s) }
   otherText: {},         // { qId: "custom text" }
@@ -377,9 +384,45 @@ const app = document.getElementById("app");
 const progressFill = document.getElementById("progressFill");
 
 function render(){
+  if (state.screen === "gate") return renderGate();
   if (state.screen === "intro") return renderIntro();
   if (state.screen === "outro") return renderOutro();
   return renderQuestion();
+}
+
+function renderGate(){
+  progressFill.style.width = "0%";
+  app.innerHTML = `
+    <div class="centered-screen">
+      <div class="brand-mark">
+        <img class="symbol" src="${LOGO_SYMBOL}" alt="">
+        <img class="typo" src="${LOGO_TYPO}" alt="BRANES">
+      </div>
+      <div class="hero-title">Acceso<br><span class="accent">privado</span></div>
+      <p class="hero-body">Esta encuesta es solo para quien recibió el enlace directamente. Escribe el código que te compartimos para continuar.</p>
+      <div class="name-field">
+        <label>Código de acceso</label>
+        <input id="gateInput" type="text" placeholder="Código" autocomplete="off">
+        ${state.gateError ? `<p style="color:var(--blue);font-size:12.5px;margin-top:8px;">Ese código no es correcto. Intenta de nuevo.</p>` : ""}
+      </div>
+      <button class="btn-start" id="gateBtn">Continuar ${ICONS.arrow}</button>
+    </div>
+  `;
+  const gateInput = document.getElementById("gateInput");
+  const gateBtn = document.getElementById("gateBtn");
+  const tryEnter = () => {
+    if (gateInput.value.trim().toLowerCase() === ACCESS_CODE.trim().toLowerCase()) {
+      state.gateError = false;
+      state.screen = "intro";
+      render();
+    } else {
+      state.gateError = true;
+      render();
+    }
+  };
+  gateBtn.addEventListener("click", tryEnter);
+  gateInput.addEventListener("keydown", e => { if (e.key === "Enter") tryEnter(); });
+  gateInput.focus();
 }
 
 function renderIntro(){
